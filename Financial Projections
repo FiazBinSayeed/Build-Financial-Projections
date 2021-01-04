@@ -1,0 +1,134 @@
+import yahoo_fin.stock_info as si 
+import matplotlib.pyplot as plt 
+import datetime   
+import numpy as np
+
+company = 'FB' 
+tax_rate = 30
+
+income_statement = si.get_income_statement(company, yearly = True) 
+cashflow = si.get_cash_flow(company, yearly = True) 
+balance_sheet = si.get_balance_sheet(company, yearly = True)
+
+depreciation = cashflow.loc['depreciation']/1000000000 
+capex = cashflow.loc['capitalExpenditures']/1000000000 * -1
+
+current_assets = balance_sheet.loc['totalCurrentAssets']/1000000000 
+current_liabilities = balance_sheet.loc['totalCurrentLiabilities']/1000000000 
+
+nwc = current_assets - current_liabilities
+
+x_axis = []
+for col in income_statement:
+    col = str(col) 
+    year = datetime.datetime.strptime(col, '%Y-%m-%d %H:%M:%S') 
+    x_axis.append(year.strftime("%Y") ) 
+x = np.array(x_axis[::-1]) 
+
+revenue = (income_statement.loc['totalRevenue'])/1000000000
+ebit = (income_statement.loc['ebit'])/1000000000 
+gross_profit = (income_statement.loc['grossProfit'])/1000000000 
+net_income = (income_statement.loc['netIncome'])/1000000000 
+
+plt.plot(x,revenue[::-1], '.r-', label = 'Revenue')   
+plt.plot(x,gross_profit[::-1], marker = 'o', color ='b', label = 'Gross profit') 
+plt.plot(x,ebit[::-1], marker = 'o', color = 'y', label = 'EBIT') 
+plt.plot(x,net_income[::-1], marker = 'o', color = 'g', label = 'Net Income') 
+ 
+plt.title("Historical Financial Summary")   
+plt.legend() 
+plt.ylabel('In Billions') 
+plt.xlabel('Year') 
+plt.show() 
+
+rev_growth = []
+ebit_growth = []
+net_income_growth = []
+gross_margin = []
+ebit_margin = []
+net_income_margin = []
+depreciation_pct = [] 
+capex_pct = [] 
+nwc_pct = [] 
+
+for i in range(0,3):
+    rev_growth.append((revenue[i] - revenue[i+1])/revenue[i] * 100) 
+    ebit_growth.append((ebit[i] - ebit[i+1])/ebit[i] * 100) 
+    net_income_growth.append((net_income[i] - net_income[i+1])/net_income[i] * 100)
+    gross_margin.append((gross_profit[i]/revenue[i])*100)
+    ebit_margin.append((ebit[i]/revenue[i])*100) 
+    net_income_margin.append((net_income[i]/revenue[i])*100) 
+    depreciation_pct.append((depreciation[i]/revenue[i])*100) 
+    capex_pct.append((capex[i]/revenue[i])*100) 
+    nwc_pct.append((nwc[i]/revenue[i])*100) 
+    
+
+mean_rev_growth = round((np.mean(rev_growth)),2)  
+mean_ebit_growth = round((np.mean(ebit_growth)),2) 
+mean_net_income_growth = round((np.mean(net_income_growth)),2) 
+mean_gross_margin = round((np.mean(gross_margin)),2) 
+mean_ebit_margin = round((np.mean(ebit_margin)),2) 
+mean_net_income_margin = round((np.mean(net_income_margin)),2) 
+mean_depreciation_pct = round((np.mean(depreciation_pct)),2) 
+mean_capex_pct = round((np.mean(capex_pct)),2) 
+mean_nwc_pct = round((np.mean(nwc_pct)),2) 
+
+print("The average Revenue growth for the past 5 years has been", mean_rev_growth, "%") 
+print("") 
+#print("The average Gross Margin for the past 5 years has been", mean_gross_margin, "%") 
+print("The average EBIT Margin for the past 5 years has been", mean_ebit_margin, "%") 
+#print("")
+#rint("The average Net Income Margin for the past 5 years has been", mean_net_income_margin, "%") 
+print("")  
+print("Depreciation as a % of revenue has been an average of", mean_depreciation_pct, "% for the past 5 years")
+print("")
+print("CAPEX as a % of revenue has been an average of", mean_capex_pct, "% for the past 5 years")
+print("") 
+print("Net Working Capital as a % of revenue has been an average of", mean_nwc_pct, "% for the past 5 years")
+
+prev_year = int(x[3] ) 
+prev_rev = int(revenue[0]) 
+
+proj_rev_growth = 30
+proj_ebit_margin = 43
+proj_depreciation_pct = 7
+proj_capex_pct = 21
+proj_nwc_pct = 86
+
+
+years =[]
+
+proj_rev=[] 
+proj_ebit = [] 
+proj_depreciation = []
+proj_capex = [] 
+proj_nwc = [] 
+
+for i in range(1,6):
+    years.append(prev_year + i) 
+    prev_rev = round(prev_rev*(1+(proj_rev_growth/100)),2)  
+    proj_ebit.append(prev_rev*proj_ebit_margin/100) 
+    proj_depreciation.append(prev_rev*proj_depreciation_pct/100) 
+    proj_capex.append(prev_rev*proj_capex_pct/100) 
+    proj_nwc.append(prev_rev*proj_nwc_pct/100) 
+    proj_rev.append(prev_rev) 
+
+print(proj_rev) 
+print(proj_ebit) 
+print(proj_depreciation)
+print(proj_nwc)
+print(proj_capex) 
+
+post_tax_ebit = [] 
+
+for i in proj_ebit:
+    post_tax_ebit.append(i*(100-tax_rate)/100) 
+
+print(post_tax_ebit)
+
+fcff = [] 
+
+for i in range(0,4):
+    fcff.append(post_tax_ebit[i] + proj_depreciation[i] - proj_capex[i] - proj_nwc[i]) 
+
+print(fcff) 
