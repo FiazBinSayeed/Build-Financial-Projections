@@ -3,21 +3,30 @@ import matplotlib.pyplot as plt
 import datetime   
 import numpy as np
 
-company = 'FB' 
-tax_rate = 30
+company = 'FB' #input company ticker symbol
+tax_rate = 30 #input tax rate
+proj_rev_growth = 30 #input revenue growth assumption for next 5 years
+proj_ebit_margin = 43 #input EBIT margin assumption for next 5 years
+proj_depreciation_pct = 7 #input depreciation as a % of revenue assumption for next 5 years
+proj_capex_pct = 21 #input CAPEX as a % of revenue assumption for next 5 years
+proj_nwc_pct = 86 #input net working capital as a % of revenue assumption for next 5 years
 
+#collects financial statements from yahoo finance
 income_statement = si.get_income_statement(company, yearly = True) 
 cashflow = si.get_cash_flow(company, yearly = True) 
 balance_sheet = si.get_balance_sheet(company, yearly = True)
 
+#collects depreciation and CAPEX data from cashflow statement
 depreciation = cashflow.loc['depreciation']/1000000000 
 capex = cashflow.loc['capitalExpenditures']/1000000000 * -1
 
+#collects data about current assets and liabilities from balance sheet 
 current_assets = balance_sheet.loc['totalCurrentAssets']/1000000000 
 current_liabilities = balance_sheet.loc['totalCurrentLiabilities']/1000000000 
 
-nwc = current_assets - current_liabilities
+nwc = current_assets - current_liabilities #formula for Net Working Capital
 
+#Collects data regarding financial reporting date based on company
 x_axis = []
 for col in income_statement:
     col = str(col) 
@@ -25,11 +34,13 @@ for col in income_statement:
     x_axis.append(year.strftime("%Y") ) 
 x = np.array(x_axis[::-1]) 
 
+#Collects key data from income statement
 revenue = (income_statement.loc['totalRevenue'])/1000000000
 ebit = (income_statement.loc['ebit'])/1000000000 
 gross_profit = (income_statement.loc['grossProfit'])/1000000000 
 net_income = (income_statement.loc['netIncome'])/1000000000 
 
+#Plots income statement data on a chart
 plt.plot(x,revenue[::-1], '.r-', label = 'Revenue')   
 plt.plot(x,gross_profit[::-1], marker = 'o', color ='b', label = 'Gross profit') 
 plt.plot(x,ebit[::-1], marker = 'o', color = 'y', label = 'EBIT') 
@@ -41,6 +52,7 @@ plt.ylabel('In Billions')
 plt.xlabel('Year') 
 plt.show() 
 
+#calculates mean growth and margin statistics for the past 5 years. This is used as an achor to produce assumptions for next 5 years
 rev_growth = []
 ebit_growth = []
 net_income_growth = []
@@ -75,10 +87,11 @@ mean_nwc_pct = round((np.mean(nwc_pct)),2)
 
 print("The average Revenue growth for the past 5 years has been", mean_rev_growth, "%") 
 print("") 
-#print("The average Gross Margin for the past 5 years has been", mean_gross_margin, "%") 
+print("The average Gross Margin for the past 5 years has been", mean_gross_margin, "%") 
+print("") 
 print("The average EBIT Margin for the past 5 years has been", mean_ebit_margin, "%") 
-#print("")
-#rint("The average Net Income Margin for the past 5 years has been", mean_net_income_margin, "%") 
+print("")
+print("The average Net Income Margin for the past 5 years has been", mean_net_income_margin, "%") 
 print("")  
 print("Depreciation as a % of revenue has been an average of", mean_depreciation_pct, "% for the past 5 years")
 print("")
@@ -89,15 +102,9 @@ print("Net Working Capital as a % of revenue has been an average of", mean_nwc_p
 prev_year = int(x[3] ) 
 prev_rev = int(revenue[0]) 
 
-proj_rev_growth = 30
-proj_ebit_margin = 43
-proj_depreciation_pct = 7
-proj_capex_pct = 21
-proj_nwc_pct = 86
-
-
 years =[]
 
+#creates projections for next 5 years based on growth and margin assumptions
 proj_rev=[] 
 proj_ebit = [] 
 proj_depreciation = []
@@ -119,6 +126,7 @@ print(proj_depreciation)
 print(proj_nwc)
 print(proj_capex) 
 
+#post-tax EBIT calculated based on tax rate assumption
 post_tax_ebit = [] 
 
 for i in proj_ebit:
@@ -126,9 +134,13 @@ for i in proj_ebit:
 
 print(post_tax_ebit)
 
+#projects free cash flow to firm for next 5 years
 fcff = [] 
 
 for i in range(0,4):
-    fcff.append(post_tax_ebit[i] + proj_depreciation[i] - proj_capex[i] - proj_nwc[i]) 
+    fcff.append(post_tax_ebit[i] + proj_depreciation[i] - proj_capex[i] - proj_nwc[i]) #FCFF formula
 
 print(fcff) 
+
+ 
+
