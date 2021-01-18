@@ -1,2 +1,2 @@
-# Finance-Tools
-Some financial tools for conducting analysis on publicly traded companies 
+# Free-Cash-Flows
+Calculate historical growth rates and margin, as well as project out future free cash flows for any publicly traded company.
